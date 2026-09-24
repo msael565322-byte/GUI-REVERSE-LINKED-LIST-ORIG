@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 class Node {
+
     int data;
     Node next;
 
@@ -14,9 +15,11 @@ class Node {
 }
 
 class LinkedList {
+
     Node head, tail;
 
     void add(int data) {
+
         Node n = new Node(data);
 
         if (head == null)
@@ -28,10 +31,12 @@ class LinkedList {
     }
 
     void reverse() {
+
         Node prev = null;
         Node cur = head;
 
         while (cur != null) {
+
             Node next = cur.next;
             cur.next = prev;
             prev = cur;
@@ -43,6 +48,7 @@ class LinkedList {
     }
 
     String show() {
+
         StringBuilder s = new StringBuilder();
 
         for (Node n = head; n != null; n = n.next)
@@ -63,14 +69,21 @@ public class Sael extends JFrame {
 
     JTextField nodeNumber = new JTextField(5);
 
-    // Bigger Node Input box
+    // Node Input box
     JTextField input = new JTextField(12);
 
-    JTextArea original = new JTextArea();
-    JTextArea reversed = new JTextArea();
+    // Linked List display boxes
+    JTextArea original = new JTextArea("Empty");
+    JTextArea reversed = new JTextArea("Empty");
 
-    JLabel count = new JLabel("Nodes: 0 / 0",
+    JLabel count = new JLabel(
+            "Nodes: 0 / 0",
             SwingConstants.CENTER);
+
+    // EXECUTION TIME
+    JLabel executionTime = new JLabel(
+            "Execution time: 0 nanoseconds",
+            SwingConstants.RIGHT);
 
     JButton setNodes = new JButton("Set Nodes");
     JButton add = new JButton("Add Node");
@@ -87,7 +100,10 @@ public class Sael extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        // ==========================================
         // TITLE
+        // ==========================================
+
         JLabel title = new JLabel(
                 "SINGLY LINKED LIST",
                 SwingConstants.CENTER);
@@ -95,7 +111,10 @@ public class Sael extends JFrame {
         title.setFont(
                 new Font("Arial", Font.BOLD, 28));
 
+        // ==========================================
         // NUMBER OF NODES
+        // ==========================================
+
         JPanel nodePanel = new JPanel();
 
         nodePanel.add(
@@ -104,7 +123,10 @@ public class Sael extends JFrame {
         nodePanel.add(nodeNumber);
         nodePanel.add(setNodes);
 
+        // ==========================================
         // INPUT
+        // ==========================================
+
         JLabel inputLabel = new JLabel(
                 "Enter a number:",
                 SwingConstants.CENTER);
@@ -122,8 +144,12 @@ public class Sael extends JFrame {
         inputPanel.add(input);
         inputPanel.add(count);
 
+        // ==========================================
         // ORIGINAL LIST
+        // ==========================================
+
         original.setEditable(false);
+
         original.setFont(
                 new Font("Monospaced", Font.BOLD, 18));
 
@@ -138,8 +164,12 @@ public class Sael extends JFrame {
                 new JScrollPane(original),
                 BorderLayout.CENTER);
 
+        // ==========================================
         // REVERSED LIST
+        // ==========================================
+
         reversed.setEditable(false);
+
         reversed.setFont(
                 new Font("Monospaced", Font.BOLD, 18));
 
@@ -154,52 +184,95 @@ public class Sael extends JFrame {
                 new JScrollPane(reversed),
                 BorderLayout.CENTER);
 
+        // ==========================================
         // LIST BOXES
+        // ==========================================
+
         JPanel lists =
-                new JPanel(new GridLayout(2, 1, 10, 10));
+                new JPanel(
+                        new GridLayout(2, 1, 10, 10));
 
         lists.add(originalPanel);
         lists.add(reversedPanel);
 
+        // ==========================================
         // BUTTON COLORS
+        // ==========================================
+
         add.setBackground(
                 new Color(60, 120, 200));
+
         add.setForeground(Color.WHITE);
 
         reverse.setBackground(
                 new Color(50, 150, 80));
+
         reverse.setForeground(Color.WHITE);
 
         clear.setBackground(
                 new Color(200, 70, 70));
+
         clear.setForeground(Color.WHITE);
 
-        // BUTTONS
-        JPanel buttons = new JPanel();
+        // ==========================================
+        // BUTTON PANEL
+        // ==========================================
 
-        buttons.add(add);
-        buttons.add(reverse);
-        buttons.add(clear);
+        JPanel buttonPanel = new JPanel();
 
+        buttonPanel.add(add);
+        buttonPanel.add(reverse);
+        buttonPanel.add(clear);
+
+        // ==========================================
+        // BOTTOM PANEL
+        // ==========================================
+
+        JPanel buttons =
+                new JPanel(
+                        new BorderLayout());
+
+        // Buttons in the center
+        buttons.add(
+                buttonPanel,
+                BorderLayout.CENTER);
+
+        // Execution time on the right
+        executionTime.setBorder(
+                BorderFactory.createEmptyBorder(
+                        0, 5, 0, 5));
+
+        buttons.add(
+                executionTime,
+                BorderLayout.EAST);
+
+        // ==========================================
         // MAIN PANEL
+        // ==========================================
+
         JPanel main =
-                new JPanel(new BorderLayout(10, 10));
+                new JPanel(
+                        new BorderLayout(10, 10));
 
         main.setBorder(
                 BorderFactory.createEmptyBorder(
                         15, 15, 15, 15));
 
-        main.add(title, BorderLayout.NORTH);
+        main.add(
+                title,
+                BorderLayout.NORTH);
 
         JPanel center =
-                new JPanel(new BorderLayout(10, 10));
+                new JPanel(
+                        new BorderLayout(10, 10));
 
         center.add(
                 nodePanel,
                 BorderLayout.NORTH);
 
         JPanel middle =
-                new JPanel(new BorderLayout(5, 5));
+                new JPanel(
+                        new BorderLayout(5, 5));
 
         middle.add(
                 inputPanel,
@@ -217,18 +290,25 @@ public class Sael extends JFrame {
                 center,
                 BorderLayout.CENTER);
 
+        // Bottom buttons + execution time
         main.add(
                 buttons,
                 BorderLayout.SOUTH);
 
         add(main);
 
+        // ==========================================
         // INITIAL STATE
+        // ==========================================
+
         add.setEnabled(false);
         reverse.setEnabled(false);
         input.setEnabled(false);
 
+        // ==========================================
         // BUTTON ACTIONS
+        // ==========================================
+
         setNodes.addActionListener(
                 e -> setNodeLimit());
 
@@ -245,7 +325,10 @@ public class Sael extends JFrame {
                 e -> addNode());
     }
 
+    // ==============================================
     // SET NUMBER OF NODES
+    // ==============================================
+
     void setNodeLimit() {
 
         try {
@@ -259,15 +342,19 @@ public class Sael extends JFrame {
             list.clear();
             current = 0;
 
-            original.setText("");
-            reversed.setText("");
+            // Empty lists
+            original.setText("Empty");
+            reversed.setText("Empty");
+
+            // Reset execution time
+            executionTime.setText(
+                    "Execution time: 0 nanoseconds");
 
             count.setText(
                     "Nodes: 0 / " + max);
 
             nodeNumber.setEnabled(false);
             setNodes.setEnabled(false);
-
             input.setEnabled(true);
             add.setEnabled(true);
             reverse.setEnabled(false);
@@ -282,7 +369,10 @@ public class Sael extends JFrame {
         }
     }
 
+    // ==============================================
     // ADD NODE
+    // ==============================================
+
     void addNode() {
 
         if (current >= max)
@@ -295,22 +385,26 @@ public class Sael extends JFrame {
 
             // Add node
             list.add(value);
-
             current++;
 
-            String result = list.show();
+            String result =
+                    list.show();
 
-            // GUI
+            // Display original list
             original.setText(result);
-            reversed.setText("");
+
+            // Reversed list remains empty
+            reversed.setText("Empty");
 
             count.setText(
-                    "Nodes: " + current +
-                    " / " + max);
+                    "Nodes: "
+                    + current
+                    + " / "
+                    + max);
 
             input.setText("");
 
-            // ALL NODES ENTERED
+            // All nodes entered
             if (current == max) {
 
                 add.setEnabled(false);
@@ -326,21 +420,56 @@ public class Sael extends JFrame {
         }
     }
 
-    // REVERSE LIST
+    // ==============================================
+    // REVERSE LIST + EXECUTION TIME
+    // ==============================================
+
     void reverseList() {
 
-        // Reverse the list
+        // START EXECUTION TIMER
+        long startTime =
+                System.nanoTime();
+
+        // Reverse linked list
         list.reverse();
 
+        // END EXECUTION TIMER
+        long endTime =
+                System.nanoTime();
+
+        // Calculate execution time
+        long elapsedTime =
+                endTime - startTime;
+
         // Display reversed list
-        String newList = list.show();
+        String newList =
+                list.show();
 
         reversed.setText(newList);
+
+        // Display execution time
+        executionTime.setText(
+                "Execution time: "
+                + elapsedTime
+                + " nanoseconds");
+
+        // ==========================================
+        // MESSAGE AFTER REVERSE
+        // ==========================================
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Linked List Reversed Successfully!",
+                "Message",
+                JOptionPane.INFORMATION_MESSAGE);
 
         reverse.setEnabled(false);
     }
 
+    // ==============================================
     // CLEAR
+    // ==============================================
+
     void clearList() {
 
         list.clear();
@@ -351,18 +480,27 @@ public class Sael extends JFrame {
         nodeNumber.setText("");
         input.setText("");
 
-        original.setText("");
-        reversed.setText("");
+        // Empty lists
+        original.setText("Empty");
+        reversed.setText("Empty");
 
-        count.setText("Nodes: 0 / 0");
+        count.setText(
+                "Nodes: 0 / 0");
+
+        // Reset execution time
+        executionTime.setText(
+                "Execution time: 0 nanoseconds");
 
         nodeNumber.setEnabled(true);
         setNodes.setEnabled(true);
-
         input.setEnabled(false);
         add.setEnabled(false);
         reverse.setEnabled(false);
     }
+
+    // ==============================================
+    // MAIN
+    // ==============================================
 
     public static void main(String[] args) {
 
