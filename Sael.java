@@ -232,12 +232,10 @@ public class Sael extends JFrame {
                 new JPanel(
                         new BorderLayout());
 
-        // Buttons in the center
         buttons.add(
                 buttonPanel,
                 BorderLayout.CENTER);
 
-        // Execution time on the right
         executionTime.setBorder(
                 BorderFactory.createEmptyBorder(
                         0, 5, 0, 5));
@@ -355,17 +353,30 @@ public class Sael extends JFrame {
 
             nodeNumber.setEnabled(false);
             setNodes.setEnabled(false);
+
             input.setEnabled(true);
             add.setEnabled(true);
             reverse.setEnabled(false);
 
             input.requestFocus();
 
+            // ==========================================
+            // MESSAGE AFTER SET NODES
+            // ==========================================
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Number of Nodes Set",
+                    "Message",
+                    JOptionPane.INFORMATION_MESSAGE);
+
         } catch (Exception e) {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Enter a valid number of nodes.");
+                    "Enter a valid number of nodes.",
+                    "Message",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -416,7 +427,9 @@ public class Sael extends JFrame {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Enter a valid integer.");
+                    "Enter a valid integer.",
+                    "Message",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -493,6 +506,7 @@ public class Sael extends JFrame {
 
         nodeNumber.setEnabled(true);
         setNodes.setEnabled(true);
+
         input.setEnabled(false);
         add.setEnabled(false);
         reverse.setEnabled(false);
