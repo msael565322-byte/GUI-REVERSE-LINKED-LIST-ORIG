@@ -2,12 +2,13 @@ package sael;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 class Node {
-
     int data;
     Node next;
-
     Node(int data) {
         this.data = data;
         this.next = null;
@@ -15,363 +16,379 @@ class Node {
 }
 
 class LinkedList {
-
     Node head, tail;
-
     void add(int data) {
-
         Node n = new Node(data);
-
         if (head == null)
             head = n;
         else
             tail.next = n;
-
         tail = n;
     }
-
     void reverse() {
-
         Node prev = null;
         Node cur = head;
-
         while (cur != null) {
-
             Node next = cur.next;
             cur.next = prev;
             prev = cur;
             cur = next;
         }
-
         tail = head;
         head = prev;
     }
-
+    // values of the list, used to draw the boxes
+    int[] toArray() {
+        int count = 0;
+        for (Node n = head; n != null; n = n.next)
+            count++;
+        int[] arr = new int[count];
+        int i = 0;
+        for (Node n = head; n != null; n = n.next)
+            arr[i++] = n.data;
+        return arr;
+    }
     String show() {
-
         StringBuilder s = new StringBuilder();
-
         for (Node n = head; n != null; n = n.next)
             s.append(n.data).append(" -> ");
-
         return s.append("NULL").toString();
     }
-
     void clear() {
         head = null;
         tail = null;
     }
 }
 
+// diagram panel(draws boxes + arrows + NULL + tags)
+class ListDiagram extends JPanel {
+    int[] values = new int[0];
+    int currentIdx = -1;   // which node "current" is on (-1 = no tags)
+    static final int X0 = 30;      // left margin
+    static final int BOX_Y = 60;   // top of boxes
+    static final int BOX_W = 80;
+    static final int BOX_H = 50;
+    static final int GAP = 60;     // space between boxes (arrow)
+    static final Color BOX_FILL = new Color(230, 220, 245);
+    static final Color BOX_LINE = new Color(120, 80, 170);
+    static final Color CURRENT_COLOR = new Color(40, 100, 210);
+    static final Color NEXT_COLOR = new Color(230, 120, 20);
+
+    ListDiagram() {
+        setBackground(Color.WHITE);
+        setPreferredSize(new Dimension(400, 130));
+    }
+
+    // no tags
+    void setValues(int[] values) {
+        setValues(values, -1);
+    }
+
+    // with current/next tags on currentIdx
+    void setValues(int[] values, int currentIdx) {
+        this.values = values;
+        this.currentIdx = currentIdx;
+        int width = X0 + values.length * (BOX_W + GAP) + 100;
+        setPreferredSize(new Dimension(Math.max(width, 400), 130));
+        revalidate();
+        repaint();
+        // keep the current tag visible when the list gets long
+        if (currentIdx >= 0) {
+            int x = X0 + currentIdx * (BOX_W + GAP);
+            SwingUtilities.invokeLater(() ->
+                    scrollRectToVisible(
+                            new Rectangle(x - 20, 0, BOX_W + GAP + 150, getHeight())));
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g0) {
+        super.paintComponent(g0);
+        Graphics2D g = (Graphics2D) g0;
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        int n = values.length;
+        if (n == 0) {
+            g.setColor(Color.GRAY);
+            g.setFont(new Font("Arial", Font.ITALIC, 16));
+            g.drawString("Empty", X0, BOX_Y + 30);
+            return;
+        }
+        g.setStroke(new BasicStroke(2f));
+        // boxes and arrows
+        for (int i = 0; i < n; i++) {
+            int x = X0 + i * (BOX_W + GAP);
+            g.setColor(BOX_FILL);
+            g.fillRect(x, BOX_Y, BOX_W, BOX_H);
+            g.setColor(BOX_LINE);
+            g.drawRect(x, BOX_Y, BOX_W, BOX_H);
+            // data text (centered)
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.BOLD, 18));
+            FontMetrics fm = g.getFontMetrics();
+            String text = String.valueOf(values[i]);
+            g.drawString(text,
+                    x + (BOX_W - fm.stringWidth(text)) / 2,
+                    BOX_Y + (BOX_H + fm.getAscent()) / 2 - 3);
+            // arrow to next box (or to NULL)
+            drawArrow(g,
+                    x + BOX_W,
+                    BOX_Y + BOX_H / 2,
+                    x + BOX_W + GAP,
+                    BOX_Y + BOX_H / 2);
+        }
+        // NULL 
+        int nullX = X0 + n * (BOX_W + GAP) + 8;
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 16));
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString("NULL", nullX,
+                BOX_Y + BOX_H / 2 + fm.getAscent() / 2 - 2);
+        // current/next tags 
+        if (currentIdx >= 0 && currentIdx < n) {
+            int currentX = X0 + currentIdx * (BOX_W + GAP) + BOX_W / 2;
+            int nextIdx = currentIdx + 1;
+            int nextX;
+            if (nextIdx < n)
+                nextX = X0 + nextIdx * (BOX_W + GAP) + BOX_W / 2;
+            else
+                nextX = nullX + fm.stringWidth("NULL") / 2;
+            drawTag(g, "current", currentX, CURRENT_COLOR);
+            drawTag(g, "next", nextX, NEXT_COLOR);
+        }
+    }
+
+    // label above a node with a small arrow pointing down
+    void drawTag(Graphics2D g, String text, int centerX, Color color) {
+        g.setColor(color);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(text,
+                centerX - fm.stringWidth(text) / 2,
+                22);
+        drawArrow(g, centerX, 28, centerX, BOX_Y - 2);
+    }
+
+    // line with a filled arrowhead (uses the current graphics color)
+    void drawArrow(Graphics2D g, int x1, int y1, int x2, int y2) {
+        double angle = Math.atan2(y2 - y1, x2 - x1);
+        int head = 10;
+        int bx = (int) (x2 - head * Math.cos(angle));
+        int by = (int) (y2 - head * Math.sin(angle));
+        g.drawLine(x1, y1, bx, by);
+        Polygon p = new Polygon();
+        p.addPoint(x2, y2);
+        p.addPoint((int) (x2 - head * Math.cos(angle - Math.PI / 6)),
+                (int) (y2 - head * Math.sin(angle - Math.PI / 6)));
+        p.addPoint((int) (x2 - head * Math.cos(angle + Math.PI / 6)),
+                (int) (y2 - head * Math.sin(angle + Math.PI / 6)));
+        g.fillPolygon(p);
+    }
+}
+
 public class Sael extends JFrame {
-
     LinkedList list = new LinkedList();
-
     JTextField nodeNumber = new JTextField(5);
-
-    // Node Input box
+    // node input box
     JTextField input = new JTextField(12);
-
-    // Linked List display boxes
-    JTextArea original = new JTextArea("Empty");
-    JTextArea reversed = new JTextArea("Empty");
-
+    // linked list diagram boxes
+    ListDiagram original = new ListDiagram();
+    ListDiagram reversed = new ListDiagram();
     JLabel count = new JLabel(
             "Nodes: 0 / 0",
             SwingConstants.CENTER);
-
-    // EXECUTION TIME
+    // execution time
     JLabel executionTime = new JLabel(
             "Execution time: 0 nanoseconds",
             SwingConstants.RIGHT);
-
     JButton setNodes = new JButton("Set Nodes");
     JButton add = new JButton("Add Node");
     JButton reverse = new JButton("Reverse");
     JButton clear = new JButton("Clear");
-
+    JButton load = new JButton("Load File");
     int max = 0;
     int current = 0;
 
     public Sael() {
-
         setTitle("Reverse Linked List");
-        setSize(700, 500);
+        setSize(900, 650);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
-        // ==========================================
-        // TITLE
-        // ==========================================
-
+        // title
         JLabel title = new JLabel(
                 "SINGLY LINKED LIST",
                 SwingConstants.CENTER);
-
         title.setFont(
                 new Font("Arial", Font.BOLD, 28));
-
-        // ==========================================
-        // NUMBER OF NODES
-        // ==========================================
-
+        // number of nodes
         JPanel nodePanel = new JPanel();
-
         nodePanel.add(
                 new JLabel("Number of Nodes:"));
-
         nodePanel.add(nodeNumber);
         nodePanel.add(setNodes);
-
-        // ==========================================
-        // INPUT
-        // ==========================================
-
+        // input
         JLabel inputLabel = new JLabel(
                 "Enter a number:",
                 SwingConstants.CENTER);
-
         inputLabel.setFont(
                 new Font("Arial", Font.BOLD, 16));
-
         input.setFont(
                 new Font("Arial", Font.PLAIN, 18));
-
         JPanel inputPanel =
                 new JPanel(new GridLayout(3, 1, 5, 5));
-
         inputPanel.add(inputLabel);
         inputPanel.add(input);
         inputPanel.add(count);
-
-        // ==========================================
-        // ORIGINAL LIST
-        // ==========================================
-
-        original.setEditable(false);
-
-        original.setFont(
-                new Font("Monospaced", Font.BOLD, 18));
-
+        // original list diagram
+        JLabel originalTitle = new JLabel("Original Linked List:");
+        originalTitle.setFont(new Font("Arial", Font.BOLD, 14));
         JPanel originalPanel =
                 new JPanel(new BorderLayout());
-
         originalPanel.add(
-                new JLabel("Original Linked List:"),
+                originalTitle,
                 BorderLayout.NORTH);
-
         originalPanel.add(
-                new JScrollPane(original),
+                makeScroll(original),
                 BorderLayout.CENTER);
-
-        // ==========================================
-        // REVERSED LIST
-        // ==========================================
-
-        reversed.setEditable(false);
-
-        reversed.setFont(
-                new Font("Monospaced", Font.BOLD, 18));
-
+        // reverse list diagram
+        JLabel reversedTitle = new JLabel("Reversed Linked List:");
+        reversedTitle.setFont(new Font("Arial", Font.BOLD, 14));
         JPanel reversedPanel =
                 new JPanel(new BorderLayout());
-
         reversedPanel.add(
-                new JLabel("Reversed Linked List:"),
+                reversedTitle,
                 BorderLayout.NORTH);
-
         reversedPanel.add(
-                new JScrollPane(reversed),
+                makeScroll(reversed),
                 BorderLayout.CENTER);
-
-        // ==========================================
-        // LIST BOXES
-        // ==========================================
-
+        // boxes list
         JPanel lists =
                 new JPanel(
                         new GridLayout(2, 1, 10, 10));
-
         lists.add(originalPanel);
         lists.add(reversedPanel);
-
-        // ==========================================
-        // BUTTON COLORS
-        // ==========================================
-
+        // button colors
         add.setBackground(
                 new Color(60, 120, 200));
-
         add.setForeground(Color.WHITE);
-
         reverse.setBackground(
                 new Color(50, 150, 80));
-
         reverse.setForeground(Color.WHITE);
-
         clear.setBackground(
                 new Color(200, 70, 70));
-
         clear.setForeground(Color.WHITE);
-
-        // ==========================================
-        // BUTTON PANEL
-        // ==========================================
-
+        load.setBackground(new Color(80, 140, 190));
+        load.setForeground(Color.WHITE);
+        // button panel
         JPanel buttonPanel = new JPanel();
-
         buttonPanel.add(add);
         buttonPanel.add(reverse);
         buttonPanel.add(clear);
-
-        // ==========================================
-        // BOTTOM PANEL
-        // ==========================================
+        buttonPanel.add(load);
 
         JPanel buttons =
                 new JPanel(
                         new BorderLayout());
-
         buttons.add(
                 buttonPanel,
                 BorderLayout.CENTER);
-
         executionTime.setBorder(
                 BorderFactory.createEmptyBorder(
                         0, 5, 0, 5));
-
         buttons.add(
                 executionTime,
                 BorderLayout.EAST);
-
-        // ==========================================
-        // MAIN PANEL
-        // ==========================================
-
+        //panel
         JPanel main =
                 new JPanel(
                         new BorderLayout(10, 10));
-
         main.setBorder(
                 BorderFactory.createEmptyBorder(
                         15, 15, 15, 15));
-
         main.add(
                 title,
                 BorderLayout.NORTH);
-
         JPanel center =
                 new JPanel(
                         new BorderLayout(10, 10));
-
         center.add(
                 nodePanel,
                 BorderLayout.NORTH);
-
         JPanel middle =
                 new JPanel(
                         new BorderLayout(5, 5));
-
         middle.add(
                 inputPanel,
                 BorderLayout.NORTH);
-
         middle.add(
                 lists,
                 BorderLayout.CENTER);
-
         center.add(
                 middle,
                 BorderLayout.CENTER);
-
         main.add(
                 center,
                 BorderLayout.CENTER);
-
-        // Bottom buttons + execution time
+        // bottom buttons and the execution time
         main.add(
                 buttons,
                 BorderLayout.SOUTH);
-
         add(main);
-
-        // ==========================================
-        // INITIAL STATE
-        // ==========================================
-
+        //initial state
         add.setEnabled(false);
         reverse.setEnabled(false);
         input.setEnabled(false);
-
-        // ==========================================
-        // BUTTON ACTIONS
-        // ==========================================
-
+        // buttons
         setNodes.addActionListener(
                 e -> setNodeLimit());
-
         add.addActionListener(
                 e -> addNode());
-
         reverse.addActionListener(
                 e -> reverseList());
-
         clear.addActionListener(
                 e -> clearList());
-
+        load.addActionListener(
+                e -> loadFromFile());
         input.addActionListener(
                 e -> addNode());
     }
 
-    // ==============================================
-    // SET NUMBER OF NODES
-    // ==============================================
+    // scroll pane
+    JScrollPane makeScroll(ListDiagram d) {
+        return new JScrollPane(d,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    }
 
     void setNodeLimit() {
-
         try {
-
             max = Integer.parseInt(
                     nodeNumber.getText().trim());
-
             if (max <= 0)
                 throw new Exception();
-
             list.clear();
             current = 0;
-
-            // Empty lists
-            original.setText("Empty");
-            reversed.setText("Empty");
-
-            // Reset execution time
+            // empty diagrams
+            original.setValues(new int[0]);
+            reversed.setValues(new int[0]);
+            // reset execution time
             executionTime.setText(
                     "Execution time: 0 nanoseconds");
-
             count.setText(
                     "Nodes: 0 / " + max);
-
+            autoSaveToFile();
             nodeNumber.setEnabled(false);
             setNodes.setEnabled(false);
-
             input.setEnabled(true);
             add.setEnabled(true);
             reverse.setEnabled(false);
-
             input.requestFocus();
-
-            // ==========================================
-            // MESSAGE AFTER SET NODES
-            // ==========================================
-
             JOptionPane.showMessageDialog(
                     this,
                     "Number of Nodes Set",
                     "Message",
                     JOptionPane.INFORMATION_MESSAGE);
-
         } catch (Exception e) {
-
             JOptionPane.showMessageDialog(
                     this,
                     "Enter a valid number of nodes.",
@@ -380,51 +397,32 @@ public class Sael extends JFrame {
         }
     }
 
-    // ==============================================
-    // ADD NODE
-    // ==============================================
-
     void addNode() {
-
         if (current >= max)
             return;
-
         try {
-
             int value = Integer.parseInt(
                     input.getText().trim());
-
-            // Add node
+            // add node
             list.add(value);
             current++;
-
-            String result =
-                    list.show();
-
-            // Display original list
-            original.setText(result);
-
-            // Reversed list remains empty
-            reversed.setText("Empty");
-
+            original.setValues(list.toArray(), current - 1);
+            // reversed list remains empty
+            reversed.setValues(new int[0]);
             count.setText(
                     "Nodes: "
                     + current
                     + " / "
                     + max);
-
+            autoSaveToFile();
             input.setText("");
-
-            // All nodes entered
+            // all nodes entered
             if (current == max) {
-
                 add.setEnabled(false);
                 reverse.setEnabled(true);
                 input.setEnabled(false);
             }
-
         } catch (Exception e) {
-
             JOptionPane.showMessageDialog(
                     this,
                     "Enter a valid integer.",
@@ -433,91 +431,156 @@ public class Sael extends JFrame {
         }
     }
 
-    // ==============================================
-    // REVERSE LIST + EXECUTION TIME
-    // ==============================================
-
     void reverseList() {
-
-        // START EXECUTION TIMER
+        // the start of execution timer
         long startTime =
                 System.nanoTime();
-
-        // Reverse linked list
+        // reverse linked list
         list.reverse();
-
-        // END EXECUTION TIMER
+        // end execution timer
         long endTime =
                 System.nanoTime();
-
-        // Calculate execution time
+        // calculate execution time
         long elapsedTime =
                 endTime - startTime;
-
-        // Display reversed list
-        String newList =
-                list.show();
-
-        reversed.setText(newList);
-
-        // Display execution time
+        reversed.setValues(list.toArray());
+        original.setValues(original.values);
+        // display execution time
         executionTime.setText(
                 "Execution time: "
                 + elapsedTime
                 + " nanoseconds");
-
-        // ==========================================
-        // MESSAGE AFTER REVERSE
-        // ==========================================
-
+        // after reverse dialog
         JOptionPane.showMessageDialog(
                 this,
                 "Linked List Reversed Successfully!",
                 "Message",
                 JOptionPane.INFORMATION_MESSAGE);
-
+        // save the result to a text file
+        autoSaveToFile();
         reverse.setEnabled(false);
     }
 
-    // ==============================================
-    // CLEAR
-    // ==============================================
+    // load text file
+    void loadFromFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Linked List Text File");
+        int result = fileChooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION)
+            return;
+        java.io.File selectedFile = fileChooser.getSelectedFile();
+        try (java.io.BufferedReader reader =
+                     new java.io.BufferedReader(
+                             new java.io.FileReader(selectedFile))) {
+            StringBuilder content = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+            JTextArea textArea = new JTextArea(content.toString());
+            textArea.setEditable(false);
+            textArea.setFont(new Font("Arial", Font.PLAIN, 15));
+            textArea.setLineWrap(true);
+            textArea.setWrapStyleWord(true);
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new Dimension(600, 350));
+            JOptionPane.showMessageDialog(
+                    this,
+                    scrollPane,
+                    "Loaded File: " + selectedFile.getName(),
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error loading file: " + e.getMessage(),
+                    "File Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
+    // save to text file
+    // save each run to the bottom of the same text file
+    void autoSaveToFile() {
+        String fileName = "linkedlist_data.txt";
+
+        try (BufferedWriter writer =
+                     new BufferedWriter(new FileWriter(fileName, true))) {
+
+            writer.newLine();
+            writer.write("=== REVERSE LINKED LIST ===");
+            writer.newLine();
+            writer.newLine();
+
+            writer.write("Number of Nodes: " + current);
+            writer.newLine();
+            writer.newLine();
+
+            writer.write("Original Linked List:");
+            writer.newLine();
+            writer.write(original.values.length == 0
+                    ? "NULL"
+                    : arrayToString(original.values));
+            writer.newLine();
+            writer.newLine();
+
+            writer.write("Reversed Linked List:");
+            writer.newLine();
+            writer.write(reversed.values.length == 0
+                    ? "Not reversed yet"
+                    : arrayToString(reversed.values));
+            writer.newLine();
+            writer.newLine();
+
+            // Only write execution time if list has been reversed
+            if (reversed.values.length > 0) {
+                writer.write(executionTime.getText());
+                writer.newLine();
+                writer.newLine();
+            }
+
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error automatically saving file: " + e.getMessage(),
+                    "File Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Helper method to convert an int array to string format for text output
+    String arrayToString(int[] arr) {
+        StringBuilder sb = new StringBuilder();
+        for (int val : arr) {
+            sb.append(val).append(" -> ");
+        }
+        return sb.append("NULL").toString();
+    }
+
+    // clear
     void clearList() {
-
         list.clear();
-
         max = 0;
         current = 0;
-
         nodeNumber.setText("");
         input.setText("");
-
-        // Empty lists
-        original.setText("Empty");
-        reversed.setText("Empty");
-
+        // empty diagrams
+        original.setValues(new int[0]);
+        reversed.setValues(new int[0]);
         count.setText(
                 "Nodes: 0 / 0");
-
-        // Reset execution time
+        // reset the execution time
         executionTime.setText(
                 "Execution time: 0 nanoseconds");
-
+        autoSaveToFile();
         nodeNumber.setEnabled(true);
         setNodes.setEnabled(true);
-
         input.setEnabled(false);
         add.setEnabled(false);
         reverse.setEnabled(false);
     }
 
-    // ==============================================
-    // MAIN
-    // ==============================================
-
+    // main
     public static void main(String[] args) {
-
         SwingUtilities.invokeLater(() ->
                 new Sael().setVisible(true));
     }
