@@ -30,25 +30,15 @@ public class palobog {
 
         while (current != null) {
 
-            // Save the next node
-
             SinglyLinkedListNode next = current.next;
-
-            // Reverse the pointer
 
             current.next = prev;
 
-            // Move prev forward
-
             prev = current;
-
-            // Move current forward
 
             current = next;
 
         }
-
-        // Return the new head
 
         return prev;
 
@@ -81,8 +71,6 @@ public class palobog {
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
-
-        System.out.println("=== REVERSE LINKED LIST ===");
 
         // Ask for number of nodes
 
